@@ -6,17 +6,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+"""Extracts top k frame"""
 def extract_top_k_extreme_frames(
     video_dir: str, 
     output_dir: str, 
     target_fps_sample: float = 1.0, 
     top_k: int = 10
 ):
-    video_paths = list(Path(video_dir).glob("*.mp4"))
-    os.makedirs(output_dir, exist_ok=True)
+    video_paths = list(Path(video_dir).glob("*.mp4")) #selects all mp4 videos in the specified directory
+    os.makedirs(output_dir, exist_ok=True) #creates output directory
     
-    all_candidates = [] # Store tuples of (score, frame, filename, lap_var)
-
+    all_candidates = [] 
     for vid_path in video_paths:
         cap = cv2.VideoCapture(str(vid_path))
         native_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
@@ -32,16 +32,23 @@ def extract_top_k_extreme_frames(
                 break
             
             if frame_idx % frame_interval == 0:
+
+                #grayscaling
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+                #laplacian filter for eliminating blur frames
                 lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
                 
+                #resizes the frame
                 gray_small = cv2.resize(gray, (320, 180), interpolation=cv2.INTER_AREA)
                 
+                #computes structural diff between consecutive frames
                 if prev_gray_small is not None:
                     diff_score = np.sum(cv2.absdiff(gray_small, prev_gray_small)) / (gray_small.size * 255.0)
                 else:
-                    diff_score = 1.0  # Max score for the first frame
-                
+                    diff_score = 1.0
+
+                #stores all the candidates
                 all_candidates.append({
                     'score': diff_score,
                     'frame': frame.copy(),
@@ -54,12 +61,11 @@ def extract_top_k_extreme_frames(
             frame_idx += 1
         cap.release()
 
-    # Sort all collected frames globally by their variance/difference score (highest first)
+    #sorts candidates by diff score and picks top k frames
     all_candidates.sort(key=lambda x: x['score'], reverse=True)
-    
-    # Pick the top K extreme frames
     selected_frames = all_candidates[:top_k]
     
+
     print(f"\nExtracted top {len(selected_frames)} extreme variance frames:")
     for i, item in enumerate(selected_frames):
         out_name = f"{item['vid_name']}_f{item['frame_idx']:06d}_diff{item['score']*100:.1f}%.jpg"
