@@ -6,7 +6,7 @@ This script extracts frames from videos (`.mp4`) and filters out duplicate or st
 
 1. Install the required libraries:
 ```bash
-pip install opencv-python numpy python-dotenv label-studio ultralytics supervision
+pip install opencv-python numpy python-dotenv label-studio
 ```
 
 2. Create a `.env` file in the project folder and configure your paths:
