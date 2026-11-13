@@ -1,0 +1,11 @@
+.env
+.venv/
+
+
+/videos/*
+!/videos/.gitkeep
+
+/extracted_frames/*
+!/extracted_frames/.gitkeep
+
+__pycache__
